@@ -1,9 +1,9 @@
 class csv_to_json:
     def __init__(self, file):
-        '''
+        """
         :param file: chemin du fichier .csv à convertir en list de dict,
         utile dans l'utilisation de ZingGrid
-        '''
+        """
         self.file = file
 
     def convert_csv_dict(self):
