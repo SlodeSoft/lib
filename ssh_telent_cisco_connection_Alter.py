@@ -110,9 +110,9 @@ class CISCO_CONFIG:
             finish.write_log()
 
     def get_output_to_file(self, file, content):
-        dt = datetime.strftime(datetime.now(), '%Y-%m-%d')
-        file = dt+file
-        with open(file, 'a', encoding='utf-8') as command_export:
+        dt = datetime.strftime(datetime.now(), '%Y-%m-%d_')
+        concact_file_dt = dt+file
+        with open(os_path.join(f'./{datetime.year}/{file}', concact_file_dt), 'a', encoding='utf-8') as command_export:
             command_export.write(content)
         return True
 
