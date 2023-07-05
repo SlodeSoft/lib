@@ -46,12 +46,9 @@ class CISCO_CONFIG:
         print("Executing Commands on", self.telnet_host2login)
         if os_path.isfile(self.commands_file):
             commands = open(self.commands_file, "r")
-            try:
-                for cmd2exe in commands:
-                    self.w_it["msg"].append(cmd2exe.encode('ascii'))
-                    self.telnet_session.write(cmd2exe.encode('ascii')+"\n".encode('ascii'))
-            finally:
-                commands.close()
+            for cmd2exe in commands:
+                self.w_it["msg"].append(cmd2exe.encode('ascii'))
+                self.telnet_session.write(cmd2exe.encode('ascii')+"\n".encode('ascii'))
         else:
             self.w_it["msg"].append(f"{self.commands_file} doesn't exist")
             print(self.commands_file, " doesn't exist")
@@ -61,15 +58,17 @@ class CISCO_CONFIG:
         # Displaying the results
         if self.verbose == "yes":
             self.telnet_session.write(b"exit\nexit\nexit\nexit\n")
-            output = self.telnet_session.read_all().decode('ascii')
-            if "% " in output:
-                print("Error: ", output)
+            output_out = self.telnet_session.read_all().decode('ascii')
+            if "% " in output_out:
+                print("Error: ", output_out)
                 self.w_it["Status"] = "Error"
-                self.w_it["msg"].append(f"Error: {output}")
+                self.w_it["msg"].append(f"Error: {output_out}")
                 exit()
             else:
-                print(output)
-                self.w_it["msg"].append(output)
+                print(output_out)
+                #command_backup = CISCO_CONFIG()
+                #command_backup.get_output_to_file(self.telnet_host2login, output_out)
+                self.w_it["msg"].append(output_out)
         self.w_it["msg"].append(f"Logging out of {self.telnet_host2login}")
         finish = LOGS(self.w_it)
         finish.write_log()
@@ -82,37 +81,36 @@ class CISCO_CONFIG:
         ssh.connect(hostname=self.telnet_host2login, port=22,
                     username=self.config.main.username,
                     password=self.config.main.password,
-                    timeout=5, auth_timeout=5)
+                    timeout=5, auth_timeout=5, banner_timeout=60, allow_agent=False)
         # Passage en mode enabled
         ssh.invoke_shell()
-        #ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command('enable\n'.encode('ascii'))
-        #ssh_stdin.write(str(self.config.main.enable).encode('ascii'))
+        # ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command('enable\n'.encode('ascii'))
+        # ssh_stdin.write(str(self.config.main.enable).encode('ascii'))
         # Interaction avec le switch ou routeur
-        commands = open(self.commands_file, "r")
+        commands = open(self.commands_file, "rb")
         try:
             for cmd2exe in commands:
                 print("On execute = ", cmd2exe)
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(cmd2exe)
+                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(cmd2exe.encode('ascii'))
                 output_out = ssh_stdout.read().decode()
                 print(output_out)
-                command_backup = CISCO_CONFIG()
-                command_backup.get_output_to_file(self.telnet_host2login, output_out)
+                #command_backup = CISCO_CONFIG()
+                #command_backup.get_output_to_file(self.telnet_host2login, output_out)
                 if ssh_stderr:
                     output_err = ssh_stderr.read().decode()
+                    print(output_err)
                     self.w_it["err"].append(output_err)
                 else:
                     self.w_it["msg"].append(output_out)
             ssh.close()
-        except Exception as err:
-            print(err)
         finally:
             finish = LOGS(self.w_it)
             finish.write_log()
 
-    def get_output_to_file(self, file, content):
+    def get_output_to_file(self, host, content):
         dt = datetime.strftime(datetime.now(), '%Y-%m-%d_')
-        concact_file_dt = dt+file
-        with open(os_path.join(f'./{datetime.year}/{file}', concact_file_dt), 'a', encoding='utf-8') as command_export:
+        concact_file_dt = dt+host
+        with open(os_path.join(f'./{datetime.year}/{host}', concact_file_dt), 'a', encoding='utf-8') as command_export:
             command_export.write(content)
         return True
 
@@ -132,9 +130,9 @@ class BASE(CISCO_CONFIG):
                     try:
                         print("On essaye en TELNET !")
                         __telnet = Telnet(__host2login, timeout=3)
-                        l = CISCO_CONFIG(telnet_session=__telnet, telnet_host2login=__host2login)
-                        print(l.login())
-                        print(l.session_commands())
+                        telnet_try = CISCO_CONFIG(telnet_session=__telnet, telnet_host2login=__host2login)
+                        print(telnet_try.login())
+                        print(telnet_try.session_commands())
                     except Exception as err:
                         print(err)
                     try:
